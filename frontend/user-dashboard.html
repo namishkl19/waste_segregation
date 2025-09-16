@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Dashboard - Waste Management</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="header">
+    <nav class="navbar container">
+      <a href="#" class="logo">
+        <i class="fas fa-recycle"></i>
+        Waste Dashboard
+      </a>
+      
+      <ul class="nav-links">
+        <li><a href="#" class="active"><i class="fas fa-home"></i> Dashboard</a></li>
+        <li><a href="#" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main class="dashboard container">
+    <div class="dashboard-header">
+      <h1 class="dashboard-title">Welcome, <span id="user-name">User</span></h1>
+      <p id="last-updated" style="color: var(--gray);">Last updated: <span></span></p>
+    </div>
+    
+    <div id="alert-container"></div>
+    
+    <div class="row">
+      <!-- Bin status cards -->
+      <div class="col-8">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title"><i class="fas fa-trash-alt"></i> Waste Bin Status</h2>
+            <p id="bin-address" style="color: var(--gray);"></p>
+          </div>
+          
+          <div class="card-body">
+            <div class="row">
+              <!-- Organic waste -->
+              <div class="col-4">
+                <div class="waste-bin">
+                  <div id="organic-fill" class="waste-fill organic-fill"></div>
+                  <div id="organic-label" class="fill-label">0%</div>
+                </div>
+                <h3 style="text-align: center; color: var(--primary);">Organic</h3>
+              </div>
+              
+              <!-- Non-recyclable waste -->
+              <div class="col-4">
+                <div class="waste-bin">
+                  <div id="nonrecyclable-fill" class="waste-fill recyclable-fill"></div>
+                  <div id="nonrecyclable-label" class="fill-label">0%</div>
+                </div>
+                <h3 style="text-align: center; color: var(--secondary);">Non-Recyclable</h3>
+              </div>
+              
+              <!-- Hazardous waste -->
+              <div class="col-4">
+                <div class="waste-bin">
+                  <div id="hazardous-fill" class="waste-fill hazardous-fill"></div>
+                  <div id="hazardous-label" class="fill-label">0%</div>
+                </div>
+                <h3 style="text-align: center; color: var(--accent);">Hazardous</h3>
+              </div>
+            </div>
+            
+            <!-- Plastic detection alert -->
+            <div id="plastic-alert" class="alert alert-warning" style="display: none;">
+              <i class="fas fa-exclamation-triangle"></i>
+              <div>
+                <strong>Plastic detected in organic waste!</strong>
+                <p>Please ensure you separate plastic materials properly.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Waste history -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title"><i class="fas fa-history"></i> Waste History</h2>
+          </div>
+          
+          <div class="card-body">
+            <div class="table-container">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Waste Type</th>
+                    <th>Amount (kg)</th>
+                  </tr>
+                </thead>
+                <tbody id="waste-history-body">
+                  <!-- Waste history rows will be inserted here -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Rewards and tips section -->
+      <div class="col-4">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title"><i class="fas fa-award"></i> Your Rewards</h2>
+          </div>
+          
+          <div class="card-body">
+            <div class="stat-card">
+              <div class="stat-value" id="total-points">0</div>
+              <div class="stat-label">Total Points</div>
+            </div>
+            
+            <div style="margin-top: 20px;">
+              <h3 style="margin-bottom: 10px;">Points Breakdown</h3>
+              
+              <div style="margin-bottom: 15px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                  <span>Organic Waste Management</span>
+                  <span id="organic-points">0</span>
+                </div>
+                <div class="progress">
+                  <div id="organic-progress" class="progress-bar progress-low" style="width: 0%;"></div>
+                </div>
+              </div>
+              
+              <div style="margin-bottom: 15px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                  <span>Non-Recyclable Waste Reduction</span>
+                  <span id="nonrecyclable-points">0</span>
+                </div>
+                <div class="progress">
+                  <div id="nonrecyclable-progress" class="progress-bar progress-medium" style="width: 0%;"></div>
+                </div>
+              </div>
+              
+              <div style="margin-bottom: 15px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                  <span>Plastic Penalties</span>
+                  <span id="plastic-penalties">0</span>
+                </div>
+                <div class="progress">
+                  <div id="plastic-progress" class="progress-bar progress-high" style="width: 0%;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Tips and recommendations -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title"><i class="fas fa-lightbulb"></i> Tips & Recommendations</h2>
+          </div>
+          
+          <div class="card-body">
+            <ul style="padding-left: 20px; margin-bottom: 0;">
+              <li style="margin-bottom: 10px;">Compost your organic waste to reduce bin filling rate</li>
+              <li style="margin-bottom: 10px;">Rinse recyclable containers before disposal</li>
+              <li style="margin-bottom: 10px;">Use reusable bags to reduce plastic waste</li>
+              <li style="margin-bottom: 10px;">Separate hazardous waste carefully to avoid contamination</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="config.js"></script>
+  <script src="user-dashboard.js"></script>
+</body>
+</html>

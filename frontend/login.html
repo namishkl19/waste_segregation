@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Waste Dashboard</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="auth-container">
+    <div class="text-center mb-4">
+      <div class="logo">
+        <i class="fas fa-recycle"></i>
+        <span>Waste Dashboard</span>
+      </div>
+    </div>
+    
+    <div id="alert-container"></div>
+    
+    <div class="card">
+      <div class="card-body">
+        <h2 class="card-title text-center">Login to your account</h2>
+        
+        <form id="login-form">
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" class="form-control" placeholder="Enter your email" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" class="form-control" placeholder="Enter your password" required>
+          </div>
+          
+          <button type="submit" class="btn btn-primary btn-block">Login</button>
+        </form>
+      </div>
+    </div>
+    
+    <div class="text-center mt-3">
+      <p>Don't have an account? <a href="signup.html">Sign up</a></p>
+    </div>
+    
+    <div class="text-center mt-4" style="padding-top: 20px; border-top: 1px solid #eee;">
+      <p>For testing only:</p>
+      <button id="test-dashboard" class="btn btn-secondary">
+        Test Direct Dashboard Access
+      </button>
+    </div>
+  </div>
+
+  <!-- Load JavaScript files -->
+  <script src="config.js"></script>
+  <script src="login.js"></script>
+  
+  <!-- Debug helper - add this temporarily -->
+  <script>
+    console.log('DEBUG INFO:');
+    console.log('- Token:', localStorage.getItem('token') ? 'Exists' : 'None');
+    console.log('- Role:', localStorage.getItem('userRole'));
+    console.log('- Name:', localStorage.getItem('userName'));
+    
+    document.addEventListener('keydown', function(e) {
+      if (e.ctrlKey && e.altKey && e.key === 'd') {
+        const role = localStorage.getItem('userRole') || 'user';
+        console.log('TEST: Force redirecting to', role, 'dashboard');
+        window.location.href = role === 'authority' ? 'authority-dashboard.html' : 'user-dashboard.html';
+      }
+    });
+    
+    document.getElementById('test-dashboard').addEventListener('click', function() {
+      const role = document.getElementById('email').value.includes('authority') ? 'authority' : 'user';
+      localStorage.setItem('token', 'test-token-' + Date.now());
+      localStorage.setItem('userRole', role);
+      localStorage.setItem('userName', 'Test User');
+      
+      console.log('Test credentials set:', {
+        token: 'test-token (generated)',
+        role: role,
+        name: 'Test User'
+      });
+      
+      if (role === 'authority') {
+        window.location.href = 'authority-dashboard.html';
+      } else {
+        window.location.href = 'user-dashboard.html';
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Authority Dashboard - Waste Management</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+</head>
+<body>
+  <header class="header">
+    <nav class="navbar container">
+      <a href="#" class="logo">
+        <i class="fas fa-recycle"></i>
+        Waste Dashboard
+      </a>
+      
+      <ul class="nav-links">
+        <li><a href="#" class="active"><i class="fas fa-home"></i> Dashboard</a></li>
+        <li><a href="#" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main class="dashboard container">
+    <div class="dashboard-header">
+      <h1 class="dashboard-title">Authority Dashboard</h1>
+      <p id="last-updated" style="color: var(--gray);">Last updated: <span></span></p>
+    </div>
+    
+    <div id="alert-container"></div>
+    
+    <!-- Overview stats -->
+    <div class="row" style="margin-bottom: 30px;">
+      <div class="col-3">
+        <div class="card stat-card">
+          <div class="stat-value" id="total-houses">0</div>
+          <div class="stat-label">Total Houses</div>
+        </div>
+      </div>
+      
+      <div class="col-3">
+        <div class="card stat-card">
+          <div class="stat-value" id="critical-bins">0</div>
+          <div class="stat-label">Critical Bins</div>
+        </div>
+      </div>
+      
+      <div class="col-3">
+        <div class="card stat-card">
+          <div class="stat-value" id="avg-organic">0%</div>
+          <div class="stat-label">Avg. Organic Fill</div>
+        </div>
+      </div>
+      
+      <div class="col-3">
+        <div class="card stat-card">
+          <div class="stat-value" id="avg-nonrecyclable">0%</div>
+          <div class="stat-label">Avg. Non-Recyclable Fill</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="row">
+      <!-- Map view -->
+      <div class="col-8">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title"><i class="fas fa-map-marker-alt"></i> Waste Bin Locations</h2>
+          </div>
+          
+          <div class="card-body">
+            <div id="map" style="height: 600px; width: 100%;"></div>
+            <p style="text-align: center; color: var(--gray);">
+              <i class="fas fa-circle" style="color: var(--primary);"></i> Normal
+              <i class="fas fa-circle" style="color: var(--warning); margin-left: 15px;"></i> Warning
+              <i class="fas fa-circle" style="color: var(--accent); margin-left: 15px;"></i> Critical
+            </p>
+          </div>
+        </div>
+        
+        <!-- Collection schedule -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title"><i class="fas fa-calendar-alt"></i> Collection Schedule</h2>
+          </div>
+          
+          <div class="card-body">
+            <div class="table-container">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Area</th>
+                    <th>Next Collection</th>
+                    <th>Bins Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="schedule-body">
+                  <!-- Schedule rows will be dynamically generated -->
+                  <tr>
+                    <td>North Zone</td>
+                    <td>Tomorrow, 8:00 AM</td>
+                    <td>
+                      <div class="progress" style="width: 150px;">
+                        <div class="progress-bar progress-high" style="width: 85%;"></div>
+                      </div>
+                    </td>
+                    <td><button class="btn btn-secondary btn-sm">Reschedule</button></td>
+                  </tr>
+                  <tr>
+                    <td>Central Zone</td>
+                    <td>Sep 15, 9:00 AM</td>
+                    <td>
+                      <div class="progress" style="width: 150px;">
+                        <div class="progress-bar progress-medium" style="width: 65%;"></div>
+                      </div>
+                    </td>
+                    <td><button class="btn btn-secondary btn-sm">Reschedule</button></td>
+                  </tr>
+                  <tr>
+                    <td>South Zone</td>
+                    <td>Sep 16, 8:30 AM</td>
+                    <td>
+                      <div class="progress" style="width: 150px;">
+                        <div class="progress-bar progress-low" style="width: 40%;"></div>
+                      </div>
+                    </td>
+                    <td><button class="btn btn-secondary btn-sm">Reschedule</button></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Critical bins and alerts -->
+      <div class="col-4">
+        <!-- Critical bins -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title"><i class="fas fa-exclamation-triangle"></i> Critical Bins</h2>
+          </div>
+          
+          <div class="card-body">
+            <div id="critical-bins-container">
+              <!-- Critical bins will be dynamically added here -->
+            </div>
+          </div>
+        </div>
+        
+        <!-- Waste distribution -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title"><i class="fas fa-chart-pie"></i> Waste Distribution</h2>
+          </div>
+          
+          <div class="card-body">
+            <canvas id="waste-distribution-chart" height="200"></canvas>
+            <div style="margin-top: 20px;">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                <span>Organic</span>
+                <span id="organic-percent">0%</span>
+              </div>
+              <div class="progress">
+                <div id="organic-distribution" class="progress-bar progress-low" style="width: 0%;"></div>
+              </div>
+            </div>
+            
+            <div style="margin-top: 15px;">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                <span>Non-Recyclable</span>
+                <span id="nonrecyclable-percent">0%</span>
+              </div>
+              <div class="progress">
+                <div id="nonrecyclable-distribution" class="progress-bar progress-medium" style="width: 0%;"></div>
+              </div>
+            </div>
+            
+            <div style="margin-top: 15px;">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                <span>Hazardous</span>
+                <span id="hazardous-percent">0%</span>
+              </div>
+              <div class="progress">
+                <div id="hazardous-distribution" class="progress-bar progress-high" style="width: 0%;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Include Chart.js for data visualization -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <!-- Include Leaflet.js for maps -->
+  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+  
+  <script src="config.js"></script>
+  <script src="authority-dashboard.js"></script>
+</body>
+</html>

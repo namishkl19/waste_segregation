@@ -1,0 +1,22 @@
+{
+  "name": "waste-dashboard-frontend",
+  "version": "1.0.0",
+  "description": "Waste Management Dashboard Frontend",
+  "main": "app.js",
+  "scripts": {
+    "start": "http-server -p 3000 --cors",
+    "dev": "nodemon app.js"
+  },
+  "dependencies": {
+    "axios": "^1.11.0",
+    "http-server": "^14.1.1",
+    "jwt-decode": "^3.1.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
+}

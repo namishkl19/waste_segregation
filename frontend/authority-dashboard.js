@@ -76,7 +76,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             tableBody.innerHTML = '';
+            // Filter out duplicate requests by address and status
+            const uniqueRequests = [];
+            const seen = new Set();
             requests.forEach(req => {
+                const key = `${req.address}-${req.status}`;
+                if (!seen.has(key)) {
+                    uniqueRequests.push(req);
+                    seen.add(key);
+                }
+            });
+            uniqueRequests.forEach(req => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${req.User ? req.User.name : 'N/A'}</td>
@@ -246,13 +256,7 @@ document.addEventListener('DOMContentLoaded', function() {
             ]
         };
         
-        // Show fallback data message
-        document.getElementById('alert-container').innerHTML = `
-            <div class="alert alert-info">
-                <i class="fas fa-info-circle"></i>
-                Showing global sample data. Backend API not available.
-            </div>
-        `;
+        // (Removed fallback data alert message)
         
         // Update dashboard with fallback data
         updateDashboard(fallbackData);
@@ -280,12 +284,11 @@ document.addEventListener('DOMContentLoaded', function() {
         if (data.criticalBins && data.criticalBins.length) {
             const criticalBinsContainer = document.getElementById('critical-bins-container');
             criticalBinsContainer.innerHTML = '';
-            
             data.criticalBins.forEach(bin => {
+                const reward = bin.reward;
                 const binElement = document.createElement('div');
                 binElement.className = 'card mb-3';
                 binElement.style.padding = '15px';
-                
                 binElement.innerHTML = `
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <h4 style="margin: 0;">${bin.houseId || 'Unknown'}</h4>
@@ -293,11 +296,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                     <p style="margin: 5px 0 0 0; color: var(--gray);">${bin.address || 'No address'}</p>
                     <div class="progress mt-2">
-                        <div class="progress-bar progress-${getProgressColor(bin.maxLevel)}" 
-                             style="width: ${bin.maxLevel}%;"></div>
+                        <div class="progress-bar progress-${getProgressColor(bin.maxLevel)}" style="width: ${bin.maxLevel}%;"></div>
+                    </div>
+                    <div class="mt-2">
+                        <span class="badge bg-info">Reward: ${reward ? reward.totalPoints : 0} pts</span>
                     </div>
                 `;
-                
                 criticalBinsContainer.appendChild(binElement);
             });
         } else {
@@ -358,8 +362,12 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
-        // Create map with adjusted view and zoom
+        // Destroy previous map instance if it exists
+        if (window._authorityMap) {
+            window._authorityMap.remove();
+        }
         const map = L.map('map').setView([10, 0], 2); // Lower center point, zoom level 2
+        window._authorityMap = map;
         
         // Explicitly set the map size to ensure proper rendering
         map.invalidateSize();
@@ -374,31 +382,68 @@ document.addEventListener('DOMContentLoaded', function() {
         const markers = L.markerClusterGroup({
             disableClusteringAtZoom: 8,
             spiderfyOnMaxZoom: true,
-            showCoverageOnHover: false
+            showCoverageOnHover: false,
+            animateAddingMarkers: true,
+            iconCreateFunction: function(cluster) {
+                // Custom cluster icon with count and bin status color blend
+                let critical = 0, warning = 0, normal = 0;
+                cluster.getAllChildMarkers().forEach(m => {
+                    if (m.binStatus === 'critical') critical++;
+                    else if (m.binStatus === 'warning') warning++;
+                    else normal++;
+                });
+                let bg = 'linear-gradient(135deg, #dc3545 0%, #fd7e14 50%, #198754 100%)';
+                if (critical > 0) bg = '#dc3545';
+                else if (warning > 0) bg = '#fd7e14';
+                else if (normal > 0) bg = '#198754';
+                return L.divIcon({
+                    html: `<div style="background:${bg};color:#fff;border-radius:50%;width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:1.1em;box-shadow:0 2px 8px #0002;position:relative;">
+                        <span>${cluster.getChildCount()}</span>
+                        <span style='position:absolute;bottom:2px;right:6px;font-size:0.7em;'><i class="fas fa-recycle"></i></span>
+                    </div>`,
+                    className: 'custom-cluster-icon',
+                    iconSize: [44, 44]
+                });
+            }
         });
-        
-        // Add the markers to the map
+                // Cluster popup: show bin count and breakdown
+                markers.on('clusterclick', function(a) {
+                        const cluster = a.layer;
+                        const all = cluster.getAllChildMarkers();
+                        let critical = 0, warning = 0, normal = 0;
+                        all.forEach(m => {
+                                if (m.binStatus === 'critical') critical++;
+                                else if (m.binStatus === 'warning') warning++;
+                                else normal++;
+                        });
+                        const popupContent = `
+                                <div style='min-width:160px;'>
+                                    <strong>${all.length} bins in this area</strong><br>
+                                    <span class='text-danger'><i class="fas fa-exclamation-triangle"></i> Critical: ${critical}</span><br>
+                                    <span class='text-warning'><i class="fas fa-exclamation-circle"></i> Warning: ${warning}</span><br>
+                                    <span class='text-success'><i class="fas fa-check-circle"></i> Normal: ${normal}</span>
+                                </div>
+                        `;
+                        L.popup({closeButton:true, autoPan:true})
+                            .setLatLng(cluster.getLatLng())
+                            .setContent(popupContent)
+                            .openOn(cluster._map);
+                        // Prevent default zoom on cluster click
+                        a.originalEvent.preventDefault();
+                });
         map.addLayer(markers);
-        
         // Create a bounds object to fit all markers
         const bounds = L.latLngBounds();
-        
-        // Add all marker positions to the bounds
         houses.forEach(house => {
             if (house.latitude && house.longitude) {
                 bounds.extend([house.latitude, house.longitude]);
             }
         });
-        
-        // If we have valid bounds, fit the map to show all markers
         if (bounds.isValid()) {
-            console.log('Fitting map to bounds of all markers');
             map.fitBounds(bounds, {
-                padding: [50, 50], // Add padding around markers
-                maxZoom: 12        // Don't zoom in too far
+                padding: [50, 50],
+                maxZoom: 12
             });
-        } else {
-            console.warn('No valid bounds found for markers');
         }
         
         // Add map legend
@@ -456,40 +501,59 @@ document.addEventListener('DOMContentLoaded', function() {
             houses.forEach(house => {
                 if (house.latitude && house.longitude) {
                     const binStatus = house.binStatus || 'normal';
-                    
                     if ((binStatus === 'critical' && showCritical) ||
                         (binStatus === 'warning' && showWarning) ||
                         (binStatus === 'normal' && showNormal)) {
-                        
-                        const markerColor = binStatus === 'critical' ? 'red' : 
-                                           binStatus === 'warning' ? 'orange' : 'green';
-                        
+                        // Use FontAwesome icons for marker
+                        let iconHtml = '';
+                        let markerColor = '';
+                        if (binStatus === 'critical') {
+                            iconHtml = '<i class="fas fa-exclamation-triangle fa-lg"></i>';
+                            markerColor = '#dc3545';
+                        } else if (binStatus === 'warning') {
+                            iconHtml = '<i class="fas fa-exclamation-circle fa-lg"></i>';
+                            markerColor = '#fd7e14';
+                        } else {
+                            iconHtml = '<i class="fas fa-check-circle fa-lg"></i>';
+                            markerColor = '#198754';
+                        }
+                        // Highlight if house has a pending pickup request
+                        let highlight = '';
+                        if (highlightAddresses.has(house.address.trim().toLowerCase())) {
+                            highlight = 'box-shadow:0 0 12px 4px #ffc107,0 0 0 4px #fff; border:2px solid #ffc107;';
+                        }
                         const markerIcon = L.divIcon({
                             className: `bin-marker bin-status-${binStatus}`,
-                            html: `<div style="background-color:${markerColor}">${house.maxLevel}%</div>`,
-                            iconSize: [30, 30],
-                            iconAnchor: [15, 15]
+                            html: `<div style="background:${markerColor};color:#fff;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;${highlight}">${iconHtml}</div>` +
+                                  `<div style="position:absolute;top:22px;left:0;width:100%;text-align:center;font-size:0.8em;font-weight:bold;">${house.maxLevel}%</div>`,
+                            iconSize: [32, 38],
+                            iconAnchor: [16, 32]
                         });
-                        
                         const marker = L.marker([house.latitude, house.longitude], {
                             icon: markerIcon
                         });
-                        
                         marker.binStatus = binStatus;
-                        
+                        // Add reward info to popup
+                        const reward = house.reward;
                         marker.bindPopup(`
-                            <strong>${house.address || 'Waste Bin #' + house.houseId}</strong><br>
-                            <div class="bin-info">
-                                <div class="level-indicator" style="background-color:${markerColor}; width:${house.maxLevel}%"></div>
-                                <span>Fill level: ${house.maxLevel}%</span>
+                            <div style='min-width:180px;'>
+                              <strong>${house.address || 'Waste Bin #' + house.houseId}</strong><br>
+                              <span class="badge bg-secondary">Fill: ${house.maxLevel}%</span><br>
+                              <span>Organic: ${house.organicLevel ?? '-'}%</span> | 
+                              <span>Non-Recyclable: ${house.nonRecyclableLevel ?? '-'}%</span> | 
+                              <span>Hazardous: ${house.hazardousLevel ?? '-'}%</span>
+                              <div class="bin-details mt-2">
+                                <span class="badge bg-${binStatus === 'critical' ? 'danger' : binStatus === 'warning' ? 'warning text-dark' : 'success'}">${binStatus.charAt(0).toUpperCase() + binStatus.slice(1)}</span>
+                                ${house.lastUpdated ? `<div class='text-muted small'>Last updated: ${new Date(house.lastUpdated).toLocaleString()}</div>` : ''}
+                              </div>
+                              <div class="mt-2">
+                                <span class="badge bg-info">Reward: ${reward ? reward.totalPoints : 0} pts</span>
+                              </div>
                             </div>
-                            <div class="bin-details">
-                                <p><strong>Status:</strong> <span style="color:${markerColor};text-transform:capitalize">${binStatus}</span></p>
-                                ${house.lastUpdated ? `<p><strong>Last updated:</strong> ${new Date(house.lastUpdated).toLocaleString()}</p>` : ''}
-                            </div>
-                            <button class="popup-action-btn">View Details</button>
-                        `);
-                        
+                        `, {autoPan:true, closeButton:true});
+                        marker.on('click', function(e) {
+                            marker.openPopup();
+                        });
                         markers.addLayer(marker);
                     }
                 }

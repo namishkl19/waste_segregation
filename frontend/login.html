@@ -4,60 +4,52 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login - Waste Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="auth-container">
-    <div class="text-center mb-4">
-      <div class="logo">
-        <i class="fas fa-recycle"></i>
-        <span>Waste Dashboard</span>
+  <div class="container min-vh-100 d-flex flex-column justify-content-center align-items-center bg-light">
+    <div class="w-100" style="max-width: 400px;">
+      <div class="text-center mb-4">
+        <div class="logo mb-2">
+          <i class="fas fa-recycle fa-2x text-success"></i>
+        </div>
+        <h2 class="fw-bold">Waste Dashboard</h2>
       </div>
-    </div>
-    
-    <div id="alert-container"></div>
-    
-    <div class="card">
-      <div class="card-body">
-        <h2 class="card-title text-center">Login to your account</h2>
-        
-        <form id="login-form">
-          <div class="form-group">
-            <label for="email">Email</label>
-            <input type="email" id="email" class="form-control" placeholder="Enter your email" required>
-          </div>
-          
-          <div class="form-group">
-            <label for="password">Password</label>
-            <input type="password" id="password" class="form-control" placeholder="Enter your password" required>
-          </div>
-          
-          <button type="submit" class="btn btn-primary btn-block">Login</button>
-        </form>
+      <div id="alert-container"></div>
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h4 class="card-title text-center mb-4">Login to your account</h4>
+          <form id="login-form">
+            <div class="mb-3">
+              <label for="email" class="form-label">Email</label>
+              <input type="email" id="email" class="form-control" placeholder="Enter your email" required>
+            </div>
+            <div class="mb-3">
+              <label for="password" class="form-label">Password</label>
+              <input type="password" id="password" class="form-control" placeholder="Enter your password" required>
+            </div>
+            <button type="submit" class="btn btn-success w-100">Login</button>
+          </form>
+        </div>
       </div>
-    </div>
-    
-    <div class="text-center mt-3">
-      <p>Don't have an account? <a href="signup.html">Sign up</a></p>
-    </div>
-    
-    <div class="text-center mt-4" style="padding-top: 20px; border-top: 1px solid #eee;">
-      <p>For testing only:</p>
-      <button id="test-dashboard" class="btn btn-secondary">
-        Test Direct Dashboard Access
-      </button>
+      <div class="text-center mt-3">
+        <p>Don't have an account? <a href="signup.html">Sign up</a></p>
+      </div>
+      <div class="text-center mt-4 border-top pt-3">
+        <p class="mb-2">For testing only:</p>
+        <button id="test-dashboard" class="btn btn-outline-secondary w-100">
+          Test Direct Dashboard Access
+        </button>
+      </div>
     </div>
   </div>
 
   <!-- Load JavaScript files -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <script src="config.js"></script>
   <script src="login.js"></script>
-  
-  <!-- Debug helper - add this temporarily -->
-  <script>
-    console.log('DEBUG INFO:');
-    console.log('- Token:', localStorage.getItem('token') ? 'Exists' : 'None');
     console.log('- Role:', localStorage.getItem('userRole'));
     console.log('- Name:', localStorage.getItem('userName'));
     

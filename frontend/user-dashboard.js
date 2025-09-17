@@ -163,42 +163,54 @@ document.addEventListener('DOMContentLoaded', function() {
             default: return type;
         }
     }
-    // Trash Pick-Up Request Form Logic
-    const pickupForm = document.getElementById('pickup-request-form');
-    if (pickupForm) {
-        pickupForm.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const address = document.getElementById('pickup-address').value.trim();
-            const description = document.getElementById('pickup-description').value.trim();
+    // Simple Trash Pick-Up Request Button Logic
+    const simplePickupBtn = document.getElementById('simple-pickup-request-btn');
+    if (simplePickupBtn) {
+        simplePickupBtn.addEventListener('click', async function() {
             const statusDiv = document.getElementById('pickup-request-status');
             statusDiv.textContent = '';
-            if (!address) {
-                statusDiv.textContent = 'Address is required.';
-                statusDiv.style.color = 'red';
-                return;
-            }
+            simplePickupBtn.disabled = true;
+            simplePickupBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Sending...';
             try {
-                const response = await fetch('http://localhost:5000/api/pickup-requests', {
+                // Fetch latest bin data for the request
+                const response = await fetch('http://localhost:5000/api/user/waste-levels', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                if (!response.ok) throw new Error('Failed to fetch bin data');
+                const data = await response.json();
+                const address = data.binData && data.binData.houseAddress ? data.binData.houseAddress : '';
+                const binDetails = {
+                    organicLevel: data.binData ? data.binData.organicLevel : 0,
+                    nonRecyclableLevel: data.binData ? data.binData.nonRecyclableLevel : 0,
+                    hazardousLevel: data.binData ? data.binData.hazardousLevel : 0
+                };
+                // Send request to backend
+                const reqRes = await fetch('http://localhost:5000/api/pickup-requests', {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ address, description })
+                    body: JSON.stringify({ address, binDetails })
                 });
-                if (response.ok) {
+                if (reqRes.ok) {
                     statusDiv.textContent = 'Request submitted successfully!';
                     statusDiv.style.color = 'green';
-                    pickupForm.reset();
                 } else {
-                    const data = await response.json();
-                    statusDiv.textContent = data.message || 'Failed to submit request.';
+                    const errData = await reqRes.json();
+                    statusDiv.textContent = errData.message || 'Failed to submit request.';
                     statusDiv.style.color = 'red';
                 }
             } catch (err) {
                 statusDiv.textContent = 'Error submitting request.';
                 statusDiv.style.color = 'red';
             }
+            simplePickupBtn.disabled = false;
+            simplePickupBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Request Pick-Up';
         });
     }
 });

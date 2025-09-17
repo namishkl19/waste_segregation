@@ -17,38 +17,48 @@
     </nav>
 
     <div class="container mt-4">
+        <div class="row align-items-center mb-5 fade-in">
+            <div class="col-md-6 text-center text-md-start mb-4 mb-md-0">
+                <h1 class="display-4 fw-bold mb-3">Welcome to Waste Dashboard</h1>
+                <p class="lead">Track, manage, and improve your waste segregation with beautiful analytics and interactive dashboards.</p>
+            </div>
+            <div class="col-md-6 text-center">
+                <img src="https://cdn.pixabay.com/photo/2017/01/31/13/14/trash-2028558_1280.png" alt="Waste Management Hero" class="img-fluid hero-img" style="max-height:260px; animation: floatY 3s ease-in-out infinite alternate;">
+            </div>
+        </div>
         <div class="row">
-            <div class="col-md-8">
+            <div class="col-md-8 fade-in">
                 <div class="card mb-4">
                     <div class="card-body">
                         <h3>Waste Statistics</h3>
                         <canvas id="wasteChart"></canvas>
                     </div>
                 </div>
-                
                 <div class="row">
                     <div class="col-md-4">
                         <div class="metric-box bg-success text-white">
                             <h4>Organic Waste</h4>
+                            <img src='https://cdn-icons-png.flaticon.com/512/2909/2909765.png' alt='Organic' style='width:38px;height:38px;'>
                             <p id="organicWaste">0 kg</p>
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="metric-box bg-primary text-white">
                             <h4>Non-Recyclable</h4>
+                            <img src='https://cdn-icons-png.flaticon.com/512/565/565547.png' alt='Non-Recyclable' style='width:38px;height:38px;'>
                             <p id="nonRecyclableWaste">0 kg</p>
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="metric-box bg-danger text-white">
                             <h4>Hazardous</h4>
+                            <img src='https://cdn-icons-png.flaticon.com/512/2913/2913466.png' alt='Hazardous' style='width:38px;height:38px;'>
                             <p id="hazardousWaste">0 kg</p>
                         </div>
                     </div>
                 </div>
             </div>
-
-            <div class="col-md-4">
+            <div class="col-md-4 fade-in">
                 <div class="card">
                     <div class="card-body">
                         <h3>Add Waste Entry</h3>

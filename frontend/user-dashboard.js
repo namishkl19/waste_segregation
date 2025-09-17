@@ -163,4 +163,42 @@ document.addEventListener('DOMContentLoaded', function() {
             default: return type;
         }
     }
+    // Trash Pick-Up Request Form Logic
+    const pickupForm = document.getElementById('pickup-request-form');
+    if (pickupForm) {
+        pickupForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const address = document.getElementById('pickup-address').value.trim();
+            const description = document.getElementById('pickup-description').value.trim();
+            const statusDiv = document.getElementById('pickup-request-status');
+            statusDiv.textContent = '';
+            if (!address) {
+                statusDiv.textContent = 'Address is required.';
+                statusDiv.style.color = 'red';
+                return;
+            }
+            try {
+                const response = await fetch('http://localhost:5000/api/pickup-requests', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ address, description })
+                });
+                if (response.ok) {
+                    statusDiv.textContent = 'Request submitted successfully!';
+                    statusDiv.style.color = 'green';
+                    pickupForm.reset();
+                } else {
+                    const data = await response.json();
+                    statusDiv.textContent = data.message || 'Failed to submit request.';
+                    statusDiv.style.color = 'red';
+                }
+            } catch (err) {
+                statusDiv.textContent = 'Error submitting request.';
+                statusDiv.style.color = 'red';
+            }
+        });
+    }
 });

@@ -43,8 +43,86 @@ document.addEventListener('DOMContentLoaded', function() {
         lastUpdatedEl.querySelector('span').textContent = new Date().toLocaleString();
     }
     
-    // Fetch authority data
+
+        // Fetch authority data
+
+    let pendingPickupRequests = [];
     fetchAuthorityData();
+    fetchPickupRequests();
+
+        // Fetch and display trash pick-up requests
+    async function fetchPickupRequests() {
+        const statusDiv = document.getElementById('pickup-requests-status');
+        const tableBody = document.getElementById('pickup-requests-body');
+        try {
+            const response = await fetch('http://localhost:5000/api/pickup-requests', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            if (!response.ok) {
+                const data = await response.json();
+                statusDiv.textContent = data.message || 'Failed to fetch requests.';
+                statusDiv.style.color = 'red';
+                tableBody.innerHTML = '';
+                return;
+            }
+            const requests = await response.json();
+            pendingPickupRequests = requests.filter(r => r.status === 'pending');
+            if (!requests.length) {
+                tableBody.innerHTML = '<tr><td colspan="7">No requests found.</td></tr>';
+                return;
+            }
+            tableBody.innerHTML = '';
+            requests.forEach(req => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${req.User ? req.User.name : 'N/A'}</td>
+                    <td>${req.User ? req.User.email : 'N/A'}</td>
+                    <td>${req.address}</td>
+                    <td>${req.description || ''}</td>
+                    <td>${req.status}</td>
+                    <td>${new Date(req.createdAt).toLocaleString()}</td>
+                    <td>
+                        ${req.status === 'pending' ? `<button class="accept-btn" data-id="${req.id}" title="Accept"><i class="fas fa-thumbs-up"></i></button>` : ''}
+                    </td>
+                `;
+                tableBody.appendChild(tr);
+            });
+            // Add event listeners for accept buttons
+            document.querySelectorAll('.accept-btn').forEach(btn => {
+                btn.addEventListener('click', async function() {
+                    const id = this.getAttribute('data-id');
+                    try {
+                        const res = await fetch(`http://localhost:5000/api/pickup-requests/${id}/accept`, {
+                            method: 'PATCH',
+                            headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json'
+                            }
+                        });
+                        if (res.ok) {
+                            // Remove the row from the table
+                            this.closest('tr').remove();
+                            // Refresh pendingPickupRequests and map highlights
+                            fetchPickupRequests();
+                            fetchAuthorityData();
+                        } else {
+                            alert('Failed to accept request.');
+                        }
+                    } catch (err) {
+                        alert('Error accepting request.');
+                    }
+                });
+            });
+        } catch (err) {
+            statusDiv.textContent = 'Error loading requests.';
+            statusDiv.style.color = 'red';
+            tableBody.innerHTML = '';
+        }
+    }
     
     async function fetchAuthorityData() {
         try {
@@ -244,6 +322,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    const highlightAddresses = new Set(
+      (pendingPickupRequests || []).map(req => req.address.trim().toLowerCase())
+    );
+    
     function getBadgeColor(level) {
         if (level >= 80) return 'danger';
         if (level >= 60) return 'warning';
@@ -292,102 +374,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const markers = L.markerClusterGroup({
             disableClusteringAtZoom: 8,
             spiderfyOnMaxZoom: true,
-            showCoverageOnHover: false,
-            iconCreateFunction: function(cluster) {
-                const childCount = cluster.getChildCount();
-                
-                // Count bin statuses in this cluster
-                let criticalCount = 0;
-                let warningCount = 0;
-                
-                cluster.getAllChildMarkers().forEach(marker => {
-                    if (marker.binStatus === 'critical') criticalCount++;
-                    else if (marker.binStatus === 'warning') warningCount++;
-                });
-                
-                // Determine cluster color based on contents
-                let className = 'marker-cluster ';
-                if (criticalCount > 0) {
-                    className += 'marker-cluster-critical';
-                } else if (warningCount > 0) {
-                    className += 'marker-cluster-warning';
-                } else {
-                    className += 'marker-cluster-normal';
-                }
-                
-                return L.divIcon({ 
-                    html: '<div><span>' + childCount + '</span></div>', 
-                    className: className, 
-                    iconSize: new L.Point(40, 40) 
-                });
-            }
-        });
-        
-        // Add markers for each house
-        let markersAdded = {
-            northAmerica: 0,
-            europe: 0,
-            asia: 0,
-            oceania: 0,
-            africa: 0,
-            southAmerica: 0
-        };
-
-        houses.forEach(house => {
-            if (house.latitude && house.longitude) {
-                // Categorize marker by region (simplified)
-                let region = 'other';
-                if (house.latitude > 15 && house.latitude < 70 && house.longitude < -30 && house.longitude > -170) {
-                    region = 'northAmerica';
-                } else if (house.latitude > 35 && house.latitude < 70 && house.longitude > -10 && house.longitude < 40) {
-                    region = 'europe';
-                } else if (house.latitude > 0 && house.latitude < 50 && house.longitude > 60 && house.longitude < 150) {
-                    region = 'asia';
-                } else if (house.latitude < -10 && house.longitude > 110 && house.longitude < 180) {
-                    region = 'oceania';
-                } else if (house.latitude > -40 && house.latitude < 35 && house.longitude > -20 && house.longitude < 55) {
-                    region = 'africa';
-                } else if (house.latitude < 15 && house.latitude > -60 && house.longitude < -30 && house.longitude > -80) {
-                    region = 'southAmerica';
-                }
-                markersAdded[region] = (markersAdded[region] || 0) + 1;
-                
-                // Rest of your marker creation code...
-                const binStatus = house.binStatus || 'normal'; // normal, warning, critical
-                const markerColor = binStatus === 'critical' ? 'red' : 
-                                   binStatus === 'warning' ? 'orange' : 'green';
-                
-                // Create custom icon based on bin status and level
-                const markerIcon = L.divIcon({
-                    className: `bin-marker bin-status-${binStatus}`,
-                    html: `<div style="background-color:${markerColor}">${house.maxLevel}%</div>`,
-                    iconSize: [30, 30],
-                    iconAnchor: [15, 15]
-                });
-                
-                const marker = L.marker([house.latitude, house.longitude], {
-                    icon: markerIcon
-                });
-                
-                // Store bin status on marker for clustering logic
-                marker.binStatus = binStatus;
-                
-                marker.bindPopup(`
-                    <strong>${house.address || 'Waste Bin #' + house.houseId}</strong><br>
-                    <div class="bin-info">
-                        <div class="level-indicator" style="background-color:${markerColor}; width:${house.maxLevel}%"></div>
-                        <span>Fill level: ${house.maxLevel}%</span>
-                    </div>
-                    <div class="bin-details">
-                        <p><strong>Status:</strong> <span style="color:${markerColor};text-transform:capitalize">${binStatus}</span></p>
-                        ${house.lastUpdated ? `<p><strong>Last updated:</strong> ${new Date(house.lastUpdated).toLocaleString()}</p>` : ''}
-                    </div>
-                    <button class="popup-action-btn">View Details</button>
-                `);
-                
-                // Add to cluster group instead of directly to map
-                markers.addLayer(marker);
-            }
+            showCoverageOnHover: false
         });
         
         // Add the markers to the map

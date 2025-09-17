@@ -33,6 +33,14 @@ module.exports = (sequelize, DataTypes) => {
     assignedHouses: {
       type: DataTypes.JSON,
       allowNull: true
+    },
+    authorityId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'Users',
+        key: 'id'
+      }
     }
   });
 

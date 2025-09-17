@@ -194,6 +194,31 @@
         </div>
       </div>
     </div>
+    <!-- Trash Pick-Up Requests Section -->
+    <section class="card" style="margin: 30px auto; max-width: 800px;">
+      <div class="card-header">
+        <h2 class="card-title"><i class="fas fa-truck"></i> Trash Pick-Up Requests</h2>
+      </div>
+      <div class="card-body">
+        <div id="pickup-requests-status"></div>
+        <table class="table" id="pickup-requests-table" style="width: 100%; margin-top: 10px;">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Email</th>
+              <th>Address</th>
+              <th>Description</th>
+              <th>Status</th>
+              <th>Requested At</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="pickup-requests-body">
+            <!-- Requests will be populated here -->
+          </tbody>
+        </table>
+      </div>
+    </section>
   </main>
 
   <!-- Include Chart.js for data visualization -->

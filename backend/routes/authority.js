@@ -13,14 +13,37 @@ router.get('/overview', auth, async (req, res) => {
             return res.status(403).json({ message: 'Access denied. Authority role required.' });
         }
         
-        // Get all houses/locations with their waste bins
+        // Get all houses/locations for users assigned to this authority
+        // First, get user IDs assigned to this authority
+        const assignedUsers = await User.findAll({
+            where: { authorityId: req.user.id },
+            attributes: ['id']
+        });
+        const assignedUserIds = assignedUsers.map(u => u.id);
+        // Now get houses for those users
         const houses = await HouseLocation.findAll({
+            where: { userId: assignedUserIds },
             include: [
                 {
                     model: WasteBin,
                     attributes: ['id', 'organicLevel', 'nonRecyclableLevel', 'hazardousLevel', 'lastUpdated', 'plasticDetected']
                 }
             ]
+        });
+        // Get rewards for assigned users
+        const { Reward } = require('../models');
+        const rewards = await Reward.findAll({
+            where: { userId: assignedUserIds },
+            attributes: ['userId', 'organicPoints', 'nonRecyclablePoints', 'plasticPenalty', 'totalPoints']
+        });
+        const rewardMap = {};
+        rewards.forEach(r => {
+            rewardMap[r.userId] = {
+                organicPoints: r.organicPoints,
+                nonRecyclablePoints: r.nonRecyclablePoints,
+                plasticPenalty: r.plasticPenalty,
+                totalPoints: r.totalPoints
+            };
         });
         
         // Calculate statistics
@@ -36,25 +59,22 @@ router.get('/overview', auth, async (req, res) => {
             const organicLevel = binData.organicLevel || 0;
             const nonRecyclableLevel = binData.nonRecyclableLevel || 0;
             const hazardousLevel = binData.hazardousLevel || 0;
-            
             // Calculate maximum level for this bin
             const maxLevel = Math.max(organicLevel, nonRecyclableLevel, hazardousLevel);
-            
             // Check if this bin is critical (over 80%)
             if (maxLevel > 80) {
                 criticalBins++;
             }
-            
             // Accumulate totals for average calculation
             totalOrganic += organicLevel;
             totalNonRecyclable += nonRecyclableLevel;
             totalHazardous += hazardousLevel;
-            
             // Create bin status label
             let binStatus = 'normal';
             if (maxLevel > 80) binStatus = 'critical';
             else if (maxLevel > 60) binStatus = 'warning';
-            
+            // Add reward info for this user
+            const reward = rewardMap[house.userId] || null;
             return {
                 houseId: house.id,
                 address: house.address,
@@ -62,7 +82,12 @@ router.get('/overview', auth, async (req, res) => {
                 longitude: house.longitude,
                 binStatus: binStatus,
                 maxLevel: maxLevel,
-                lastUpdated: binData.lastUpdated || null
+                lastUpdated: binData.lastUpdated || null,
+                organicLevel: binData.organicLevel || 0,
+                nonRecyclableLevel: binData.nonRecyclableLevel || 0,
+                hazardousLevel: binData.hazardousLevel || 0,
+                userId: house.userId,
+                reward: reward
             };
         });
         

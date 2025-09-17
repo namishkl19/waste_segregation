@@ -13,14 +13,16 @@ app.use(express.json());
 // Import routes
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/user');
-const authorityRoutes = require('./routes/authority'); // Make sure this is imported
+const authorityRoutes = require('./routes/authority');
 const rewardsRoutes = require('./routes/rewards');
 const wasteRoutes = require('./routes/waste');
+const pickupRequestRoutes = require('./routes/pickupRequest');
+app.use('/api/pickup-requests', pickupRequestRoutes);
 
 // Register routes
 app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
-app.use('/api/authority', authorityRoutes); // Make sure this line exists
+app.use('/api/authority', authorityRoutes);
 app.use('/api/rewards', rewardsRoutes);
 app.use('/api/waste', wasteRoutes);
 
